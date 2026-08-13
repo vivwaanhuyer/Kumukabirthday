@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Happy Birthday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#050b1e;
+    --bg-mid:#0f1f45;
+    --bg-glow:#1e3f7a;
+    --accent:#8fb8ff;
+    --accent-2:#cfe0ff;
+    --gold:#e8c26a;
+    --white:#f7f9ff;
+    --petal:#ffc9d6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Poppins', sans-serif;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, var(--bg-glow) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 100%, #142a5c 0%, transparent 60%),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 55%, var(--bg-deep) 100%);
+    color:var(--white);
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+  }
+  .script{font-family:'Dancing Script', cursive;}
+
+  /* ---------- twinkling stars ---------- */
+  #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
+  .star{
+    position:absolute; width:2px; height:2px; background:var(--white);
+    border-radius:50%; opacity:.6; animation:twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle{0%,100%{opacity:.15; transform:scale(1);} 50%{opacity:.9; transform:scale(1.6);}}
+
+  main{position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; padding:32px 18px 80px;}
+
+  /* ---------- Screen 1 : game ---------- */
+  #game-screen{width:100%; max-width:480px; text-align:center; margin-top:24px;}
+  .eyebrow{
+    letter-spacing:3px; text-transform:uppercase; font-size:11px; color:var(--accent);
+    opacity:.8; margin-bottom:10px;
+  }
+  h1.title{
+    font-family:'Dancing Script', cursive; font-weight:700;
+    font-size:clamp(34px,9vw,52px); color:var(--white);
+    text-shadow:0 0 24px rgba(143,184,255,.5);
+    margin-bottom:8px;
+  }
+  .subtitle{font-size:14px; color:var(--accent-2); opacity:.85; margin-bottom:28px; line-height:1.6;}
+
+  #board{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;
+    margin:0 auto 18px;
+  }
+  .card{
+    aspect-ratio:1/1; border-radius:14px; position:relative; cursor:pointer;
+    perspective:600px;
+  }
+  .card-inner{
+    position:absolute; inset:0; transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.2,.9,.3,1);
+  }
+  .card.flipped .card-inner, .card.matched .card-inner{ transform:rotateY(180deg); }
+  .face{
+    position:absolute; inset:0; backface-visibility:hidden; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; font-size:26px;
+  }
+  .face.back{
+    background:linear-gradient(145deg,#1a3060,#0c1c40);
+    border:1px solid rgba(143,184,255,.35);
+    box-shadow:0 4px 14px rgba(0,0,0,.35), inset 0 0 12px rgba(143,184,255,.12);
+  }
+  .face.back::after{content:"✦"; color:var(--accent); font-size:16px; opacity:.6;}
+  .face.front{
+    background:linear-gradient(145deg,#2a4a8f,#132a5e);
+    transform:rotateY(180deg);
+    border:1px solid rgba(232,194,106,.4);
+  }
+  .card.matched .face.front{
+    background:linear-gradient(145deg,#274a7a,#0f2450);
+    box-shadow:0 0 18px rgba(232,194,106,.45);
+  }
+  .moves{font-size:12px; color:var(--accent-2); opacity:.7; margin-top:6px;}
+
+  /* ---------- Screen 2 : message + lever ---------- */
+  #screen-2{
+    width:100%; max-width:480px; text-align:center;
+    max-height:0; overflow:hidden; opacity:0;
+    transition:max-height 1.1s ease, opacity 1s ease, margin 1s ease;
+  }
+  #screen-2.show{ max-height:2000px; opacity:1; margin-top:36px;}
+  .note-card{
+    background:linear-gradient(160deg, rgba(20,40,80,.65), rgba(10,20,45,.75));
+    border:1px solid rgba(143,184,255,.25);
+    border-radius:18px; padding:26px 22px; backdrop-filter:blur(6px);
+    box-shadow:0 10px 40px rgba(0,0,0,.35);
+    text-align:left; font-size:15px; line-height:1.85; color:var(--accent-2);
+    white-space:pre-line;
+  }
+  .lever-wrap{ margin-top:38px; display:flex; flex-direction:column; align-items:center; gap:10px;}
+  .lever-hint{font-size:12.5px; color:var(--accent); opacity:.8; letter-spacing:.5px;}
+  .lever-svg{ cursor:pointer; touch-action:manipulation; user-select:none; }
+  .lever-svg:active .lever-arm-g{ filter:brightness(1.15); }
+  .lever-arm-g{ transform-origin:70px 150px; transition:transform .7s cubic-bezier(.34,1.4,.4,1); }
+  .lever-svg.pulled .lever-arm-g{ transform:rotate(52deg); }
+  .lever-svg.disabled{ pointer-events:none; opacity:.55; }
+
+  /* ---------- Screen 3 : hanging letter ---------- */
+  #pin-thread{
+    position:fixed; left:50%; top:0; transform:translateX(-50%);
+    width:2px; height:0; background:linear-gradient(var(--gold), transparent);
+    z-index:30; transition:height .3s ease;
+  }
+  #pin{
+    position:fixed; left:50%; top:0; transform:translate(-50%,-50%) scale(0);
+    width:16px; height:16px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff0c8, var(--gold) 60%, #a5781f);
+    box-shadow:0 3px 8px rgba(0,0,0,.5);
+    z-index:31; transition:transform .4s cubic-bezier(.34,1.6,.5,1);
+  }
+  #pin.show{ transform:translate(-50%,-50%) scale(1); }
+
+  #letter-wrap{
+    width:100%; max-width:600px; margin-top:70px;
+    opacity:0; transform:translateY(-140%) rotate(-1.5deg);
+    transition:transform 1.1s cubic-bezier(.22,.85,.3,1.05), opacity .6s ease;
+    transform-origin:top center;
+  }
+  #letter-wrap.drop{ opacity:1; transform:translateY(0) rotate(0deg); }
+  .letter-card{
+    background:
+      linear-gradient(160deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+      linear-gradient(180deg,#0e1d40,#0a1633);
+    border:1px solid rgba(232,194,106,.3);
+    border-radius:6px 6px 16px 16px;
+    box-shadow:0 30px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(143,184,255,.05);
+    padding:26px 22px 30px;
+    position:relative;
+  }
+  .letter-card::before{
+    content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:60%; height:3px; background:linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity:.6;
+  }
+  .letter-head{ display:flex; flex-direction:column; margin-bottom:6px;}
+  .letter-title{ font-family:'Dancing Script', cursive; font-weight:700; font-size:clamp(28px,7vw,38px); color:var(--white); line-height:1.15; margin-top:16px;}
+
+  #photo-frame{
+    display:block; width:100%; min-height:420px; border-radius:16px;
+    border:2px dashed rgba(232,194,106,.55);
+    background-size:cover; background-position:center;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; position:relative;
+    box-shadow:0 14px 34px rgba(0,0,0,.4);
+  }
+  #photo-frame .plus-label{ font-size:12px; color:var(--accent-2); opacity:.7; text-align:center; line-height:1.5;}
+  @media (min-width:480px){ #photo-frame{ min-height:520px; } }
+
+  .letter-body{ font-size:14.5px; line-height:1.9; color:var(--accent-2); white-space:pre-line; margin-top:14px;}
+  .thankyou{
+    margin-top:26px; text-align:center; font-family:'Dancing Script', cursive;
+    font-weight:700; font-size:clamp(26px,7vw,36px); color:var(--gold);
+    text-shadow:0 0 20px rgba(232,194,106,.4);
+  }
+
+  /* ---------- falling hearts & petals ---------- */
+  #fall-layer{ position:fixed; inset:0; pointer-events:none; z-index:40; overflow:hidden; }
+  .falling{
+    position:absolute; top:-30px; will-change:transform, opacity;
+    animation-name:fallDown; animation-timing-function:linear; animation-fill-mode:forwards;
+  }
+  @keyframes fallDown{
+    to{ transform:translateY(110vh) translateX(var(--drift,0px)) rotate(var(--rot,360deg)); opacity:.15; }
+  }
+
+  @media (max-width:380px){
+    #board{ gap:8px; }
+    .face{ font-size:22px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+<div id="fall-layer"></div>
+<div id="pin-thread"></div>
+<div id="pin"></div>
+
+<main>
+
+  <!-- SCREEN 1: MATCH GAME -->
+  <section id="game-screen">
+    <div class="eyebrow">a little something before it begins</div>
+    <h1 class="title">Match the Stars ✦</h1>
+    <p class="subtitle">Find all the pairs to unlock what's waiting for you...</p>
+    <div id="board"></div>
+    <div class="moves" id="moves-count">Moves: 0</div>
+  </section>
+
+  <!-- SCREEN 2: MESSAGE + LEVER -->
+  <section id="screen-2">
+    <div class="note-card" id="note-1"></div>
+
+    <div class="lever-wrap">
+      <div class="lever-hint">pull the lever ↴</div>
+      <svg class="lever-svg" id="lever" width="140" height="180" viewBox="0 0 140 180">
+        <rect x="30" y="150" width="80" height="18" rx="6" fill="#0c1c40" stroke="#8fb8ff" stroke-opacity=".3"/>
+        <circle cx="70" cy="150" r="7" fill="#132a5e" stroke="#e8c26a" stroke-opacity=".6"/>
+        <g class="lever-arm-g">
+          <line x1="70" y1="150" x2="70" y2="55" stroke="#e8c26a" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="70" cy="45" r="16" fill="url(#knobGrad)"/>
+          <path d="M55 60 Q70 40 85 60 Q70 75 55 60 Z" fill="#c9445a" opacity="0.9"/>
+          <path d="M60 58 L52 72 L64 66 Z" fill="#a5334a"/>
+          <path d="M80 58 L88 72 L76 66 Z" fill="#a5334a"/>
+        </g>
+        <defs>
+          <radialGradient id="knobGrad" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#fff0c8"/>
+            <stop offset="60%" stop-color="#e8c26a"/>
+            <stop offset="100%" stop-color="#a5781f"/>
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SCREEN 3: HANGING LETTER -->
+  <div id="letter-wrap">
+    <div class="letter-card">
+      <div class="letter-head">
+        <div id="photo-frame" style="background-image:url('her.jpg');">
+          <div id="photo-placeholder">
+            <div class="plus-label">put her.jpg<br>next to this file</div>
+          </div>
+        </div>
+        <div class="letter-title script">Happy Birthday<br>meri punjaban ❤️</div>
+      </div>
+      <div class="letter-body" id="note-2"></div>
+      <div class="thankyou">Thank you for everything</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ---------------- background stars ---------------- */
+const starsWrap = document.getElementById('stars');
+for(let i=0;i<70;i++){
+  const s = document.createElement('div');
+  s.className='star';
+  s.style.left = Math.random()*100+'vw';
+  s.style.top = Math.random()*100+'vh';
+  s.style.animationDelay = (Math.random()*3)+'s';
+  s.style.width = s.style.height = (Math.random()*2+1)+'px';
+  starsWrap.appendChild(s);
+}
+
+/* ---------------- messages ---------------- */
+document.getElementById('note-1').textContent =
+`Hi Pehele toh Happy Birthday. many many happy returns of the day. aur uhh
+Tu meri life mein woh hai jo bina kuch kiye bhi mere face pe smile le aati hain. Tera hona mere liye sach mein bohot bohot bohot special hai, aur main bas itna chahta hoon ki tu hamesha khush rahe. 🫶
+Teri har wish poori ho, tu life mein bohot aage jaaye aur tere face ki ye beautiful smile kabhi kam na ho.
+Aur haan, aaj ka din sirf tera hai, so enjoy kar, khush reh aur yaad rakh tu mere liye jitni special hai, shayad main words mein kabhi sahi se bata bhi nahi paunga. I love you ❤️`;
+
+document.getElementById('note-2').textContent =
+`Aaj ka din mere liye bhi bohot special hai, kyunki aaj uss ladki ka birthday hai jo meri life mein sirf mera pyaar banke nahi, balki meri happiness, meri comfort aur meri favourite person banke aayi hai. Sach bolu toh mujhe nahi pata ki mai words mein exactly kaise explain karun ki tu mere liye kitni important hai, but I hope tu hamesha feel kar paaye ki tu mere liye kitni special hai. Tere saath bitaya hua har ek moment mere liye genuinely precious hai, chahe woh humari random si conversations ho, bina kisi reason ke hasna ho, ek dusre ko irritate karna ho ya phir bas chup rehke ek dusre ke saath time spend karna ho. Mujhe teri ye chhoti-chhoti cheezein bhi bohot pasand hain, aur shayad isi wajah se main tujhe aur zyada har din appreciate karta hoon. Tu meri life ka woh part ban gayi hai jiske bina ab cheezein thodi incomplete si lagti hain. Mai chahta hoon ki tu hamesha khush rahe, apne saare dreams achieve kare aur life mein woh sab kuch paaye jo tu deserve karti hai. Jab bhi tu low feel kare ya tujhe lage ki things aren't going your way, bas yaad rakhna ki main tere saath hoon, chahe situation kaisi bhi ho. Mai hamesha tera support karna, tujhe samajhne ki koshish karna aur tere face pe smile laane ki koshish karunga. ❤️ Teri smile mere favourite things mein se ek hai, aur honestly main chahta hoon ki woh smile kabhi fade na ho. Mujhe nahi pata future mein humare liye kya likha hai, but jo bhi time mujhe tere saath milta hai, main usse dil se lagake rakhta hoon. Tu meri sab kuch hai, but usse bhi zyada tu meri best friend, meri safe place aur meri favourite person hai. Thank you meri life mein aane ke liye, mujhe itna pyaar dene ke liye, meri stupid baatein bardasht karne ke liye aur mujhe woh happiness dene ke liye jo shayad tu khud bhi realize nahi karti. 🫶 Aaj tera birthday hai, toh please apna din properly enjoy kar, khud ka dhyan rakh, bohot saari smiles de aur bilkul bhi stress mat lena. I just hope ki aane wala kal tere liye bohot saari happiness, success, beautiful memories aur endless smiles lekar aaye. Aur haan, birthday girl, ek baat hamesha yaad rakhna — tu mere liye bohot, bohot zyada special hai, aur main genuinely grateful hoon ki meri life mein tu hai. Happy Birthday once again . ❤️ I love you so much, and I hope aaj ka din tujhe utni hi happiness de jitni tu meri life mein lekar aayi hai. ❤️`;
+
+/* ---------------- card matching game ---------------- */
+const icons = ['💙','🌙','⭐','🦋','🌊','✨'];
+let deck = [...icons, ...icons];
+deck.sort(()=>Math.random()-0.5);
+
+const board = document.getElementById('board');
+let flipped = [];
+let matchedCount = 0;
+let moves = 0;
+let lock = false;
+
+deck.forEach((icon, idx)=>{
+  const card = document.createElement('div');
+  card.className='card';
+  card.dataset.icon = icon;
+  card.dataset.idx = idx;
+  card.innerHTML = `
+    <div class="card-inner">
+      <div class="face back"></div>
+      <div class="face front">${icon}</div>
+    </div>`;
+  card.addEventListener('click', ()=>flipCard(card));
+  board.appendChild(card);
+});
+
+function flipCard(card){
+  if(lock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+  card.classList.add('flipped');
+  flipped.push(card);
+  if(flipped.length === 2){
+    moves++;
+    document.getElementById('moves-count').textContent = 'Moves: '+moves;
+    lock = true;
+    const [a,b] = flipped;
+    if(a.dataset.icon === b.dataset.icon){
+      setTimeout(()=>{
+        a.classList.add('matched'); b.classList.add('matched');
+        flipped = []; lock = false; matchedCount++;
+        if(matchedCount === icons.length){ setTimeout(revealScreen2, 500); }
+      }, 400);
+    } else {
+      setTimeout(()=>{
+        a.classList.remove('flipped'); b.classList.remove('flipped');
+        flipped = []; lock = false;
+      }, 800);
+    }
+  }
+}
+
+function revealScreen2(){
+  const s2 = document.getElementById('screen-2');
+  s2.classList.add('show');
+  setTimeout(()=> s2.scrollIntoView({behavior:'smooth', block:'start'}), 300);
+}
+
+/* ---------------- lever pull ---------------- */
+const lever = document.getElementById('lever');
+lever.addEventListener('click', ()=>{
+  if(lever.classList.contains('disabled')) return;
+  lever.classList.add('pulled','disabled');
+  pullLever();
+});
+
+function pullLever(){
+  const pinThread = document.getElementById('pin-thread');
+  const pin = document.getElementById('pin');
+  const letterWrap = document.getElementById('letter-wrap');
+
+  pinThread.style.height = '70px';
+  pin.classList.add('show');
+
+  setTimeout(()=>{
+    letterWrap.classList.add('drop');
+    showerFalling();
+    setTimeout(()=> letterWrap.scrollIntoView({behavior:'smooth', block:'start'}), 500);
+  }, 350);
+}
+
+/* ---------------- hearts & petals shower ---------------- */
+function showerFalling(){
+  const layer = document.getElementById('fall-layer');
+  const symbols = ['❤️','🌸','🌺','💙','✨'];
+  let count = 0;
+  const interval = setInterval(()=>{
+    for(let i=0;i<3;i++){
+      const el = document.createElement('div');
+      el.className='falling';
+      el.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+      const size = 14 + Math.random()*16;
+      el.style.left = Math.random()*100+'vw';
+      el.style.fontSize = size+'px';
+      el.style.setProperty('--drift', (Math.random()*160-80)+'px');
+      el.style.setProperty('--rot', (Math.random()*360+180)+'deg');
+      const dur = 4 + Math.random()*3;
+      el.style.animationDuration = dur+'s';
+      layer.appendChild(el);
+      setTimeout(()=> el.remove(), dur*1000+200);
+    }
+    count++;
+    if(count > 25) clearInterval(interval);
+  }, 180);
+}
+
+/* ---------------- photo ---------------- */
+const photoFrame = document.getElementById('photo-frame');
+const photoPlaceholder = document.getElementById('photo-placeholder');
+
+/* check if her.jpg exists next to this file; if so hide the placeholder text */
+const preload = new Image();
+preload.onload = ()=>{ photoPlaceholder.style.display = 'none'; };
+preload.onerror = ()=>{ /* her.jpg not found yet, keep the placeholder text visible */ };
+preload.src = 'her.jpg';
+</script>
+</body>
+</html>
